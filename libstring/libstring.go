@@ -2,18 +2,18 @@
 package libstring
 
 import (
-	"crypto/rand"
+    "crypto/rand"
 )
 
 func RandString(n int) string {
-	const letters = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz-"
+    const letters = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz-"
 
-	var randBytes = make([]byte, n)
-	rand.Read(randBytes)
+    var randBytes = make([]byte, n)
+    rand.Read(randBytes)
 
-	for i, b := range randBytes {
-		randBytes[i] = letters[b%byte(len(letters))]
-	}
+    for i, b := range randBytes {
+        randBytes[i] = letters[b%byte(len(letters))]
+    }
 
-	return string(randBytes)
+    return string(randBytes)
 }
