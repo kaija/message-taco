@@ -1,19 +1,11 @@
 package handlers
 
 import (
-    "github.com/kaija/message-taco/libhttp"
-    "html/template"
     "net/http"
+    "fmt"
 )
 
 func GetHome(w http.ResponseWriter, r *http.Request) {
     w.Header().Set("Content-Type", "text/html")
-
-    tmpl, err := template.ParseFiles("templates/dashboard.html.tmpl", "templates/home.html.tmpl")
-    if err != nil {
-        libhttp.HandleErrorJson(w, err)
-        return
-    }
-
-    tmpl.Execute(w, nil)
+    fmt.Fprintf(w, "OK");
 }

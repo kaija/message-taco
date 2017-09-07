@@ -3,9 +3,11 @@ package main
 import (
     "github.com/Sirupsen/logrus"
     "github.com/spf13/viper"
-    "github.com/tylerb/graceful"
     "net/http"
-    "time"
+    "context"
+    "os"
+    "os/signal"
+    "syscall"
 
     "github.com/kaija/message-taco/application"
     "github.com/kaija/message-taco/pusher"
@@ -46,25 +48,43 @@ func main() {
 
     certFile := config.Get("http_cert_file").(string)
     keyFile := config.Get("http_key_file").(string)
-    drainIntervalString := config.Get("http_drain_interval").(string)
 
-    drainInterval, err := time.ParseDuration(drainIntervalString)
     if err != nil {
         logrus.Fatal(err)
     }
 
+    sigstop := make(chan os.Signal, 1)
+    shutdown := make(chan int, 1)
+    signal.Notify(sigstop, syscall.SIGINT)
+    signal.Notify(sigstop, syscall.SIGTERM)
+
+    server := &http.Server{Addr: serverAddress, Handler: middle}
+
+    go func() {
+        logrus.Infoln("Running HTTP server on " + serverAddress)
+        if certFile != "" && keyFile != "" {
+            err = server.ListenAndServeTLS(certFile, keyFile)
+        } else {
+            err = server.ListenAndServe()
+        }
+    }()
+
+    go func() {
+        sig := <-sigstop
+        logrus.Infoln("catch signal: ", sig)
+        shutdown<-1
+    }()
+
+    <-shutdown
+    logrus.Infoln("Shutting down server...")
+    server.Shutdown(context.Background())
+/*
     srv := &graceful.Server{
         Timeout: drainInterval,
         Server:  &http.Server{Addr: serverAddress, Handler: middle},
     }
+*/
 
-    logrus.Infoln("Running HTTP server on " + serverAddress)
-
-    if certFile != "" && keyFile != "" {
-        err = srv.ListenAndServeTLS(certFile, keyFile)
-    } else {
-        err = srv.ListenAndServe()
-    }
 
     if err != nil {
         logrus.Fatal(err)
